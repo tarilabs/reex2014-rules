@@ -1,0 +1,39 @@
+package net.tarilabs.reex2014;
+
+import twitter4j.Status;
+
+// TODO as tweet most of time is both in IT and EN language, implement a rule to avoid duplicate Alert(s) for the same scenario.
+
+rule "Tweet delay"
+no-loop
+when
+	$tweet : Status( text str[startsWith] "#M",
+				     text matches "(?i)[\\s\\S]*rallent[\\s\\S]*"
+				     || text matches "(?i)[\\s\\S]*delay[\\s\\S]*"
+				     )
+then
+	Alert<Status> alert = new Alert<Status>(sessionCurrentTime(kcontext),
+													"Metro delay",	
+													AlertType.WARNING,
+													$tweet);
+	insert(alert);
+	log("ALERT raised: " + alert);
+end
+
+rule "Tweet service interruptions"
+no-loop
+when
+	$tweet : Status( text str[startsWith] "#M",
+				     text matches "(?i)[\\s\\S]*interrot[\\s\\S]*"
+				     || text matches "(?i)[\\s\\S]*interrupt[\\s\\S]*"
+				     || text matches "(?i)[\\s\\S]*sospesa[\\s\\S]*"
+				     || text matches "(?i)[\\s\\S]*suspended[\\s\\S]*"
+				     )
+then
+	Alert<Status> alert = new Alert<Status>(sessionCurrentTime(kcontext),
+													"Metro service interruptions",	
+													AlertType.WARNING,
+													$tweet);
+	insert(alert);
+	log("ALERT raised: " + alert);
+end

@@ -1,0 +1,71 @@
+package net.tarilabs.reex2014;
+
+import com.sun.syndication.feed.synd.SyndFeed;
+import twitter4j.Status;
+
+
+query "cogitoergosum"
+	$cogito : Cogito($text : text)
+end
+
+rule "init Cogito"
+no-loop
+when
+	not( Cogito() )
+then
+	insert( new Cogito() );
+end
+
+rule "Cogito text null to not much"
+no-loop
+when
+	$cogito : Cogito( text == null )
+then
+	modify($cogito) {
+		setText("Not much happened yet.")
+	}
+end
+
+rule "SyndFeed update the cogito last rss ts"
+no-loop
+when
+	SyndFeed()
+	$cogito : Cogito()
+then
+	modify($cogito) {
+		setLastRssTs(kcontext.getKieRuntime().getSessionClock().getCurrentTime())
+	}
+end
+
+rule "Status update the cogito last tweet ts"
+no-loop
+when
+	Status()
+	$cogito : Cogito()
+then
+	modify($cogito) {
+		setLastTweetTs(kcontext.getKieRuntime().getSessionClock().getCurrentTime())
+	}
+end
+
+rule "last alert is a strike, cogito utter sentence"
+no-loop
+when
+	Alert(condition matches "(?i).*strike.*") from window lastAlert
+	$cogito : Cogito()
+then
+	modify($cogito) {
+		setText("Last thing I know of, is about a Strike.");
+	}
+end
+
+rule "last alert is Metro delay, cogito utter sentence"
+no-loop
+when
+	Alert(ref instanceof Status, condition matches "(?i).*Metro delay.*") from window lastAlert
+	$cogito : Cogito()
+then
+	modify($cogito) {
+		setText("Last thing I know of, is about some Metro delays.");
+	}
+end

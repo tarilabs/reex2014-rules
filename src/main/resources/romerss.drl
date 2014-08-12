@@ -1,0 +1,48 @@
+package net.tarilabs.reex2014;
+
+import com.sun.syndication.feed.synd.SyndEntry;
+import com.sun.syndication.feed.synd.SyndFeed;
+
+/* If the RSS entry text contains the word 'sciopero' or 'strike' (case-unsensitive),
+   then raise a strike warning alert
+*/
+rule "RSS Strike warning alert"
+no-loop
+when
+	$feed : SyndFeed()
+	$entry : SyndEntry(description.value matches "(?i)[\\s\\S]*sciopero[\\s\\S]*"
+					   || description.value matches "(?i)[\\s\\S]*strike[\\s\\S]*"
+					   ) from $feed.entries
+then
+	Alert<SyndFeed> alert = new Alert<SyndFeed>(sessionCurrentTime(kcontext),
+													"Strike warning alert",	
+													AlertType.WARNING,
+													$feed);
+	insert(alert);
+	log("ALERT raised: " + alert);
+end	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* LHS a way to re-cycle on this typed-Alert, for future reference
+	Alert($ref : ref#SyndFeed.entries)
+	$entry : SyndEntry(description.value matches "(?i).*sciopero.*" 
+					   || description.value matches "(?i).*strike.*" ) from $ref
+*/

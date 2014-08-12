@@ -1,0 +1,49 @@
+package net.tarilabs.reex2014;
+
+import com.sun.syndication.feed.synd.SyndContent;
+import com.sun.syndication.feed.synd.SyndEntry;
+import com.sun.syndication.feed.synd.SyndFeed;
+
+import org.kie.api.runtime.rule.RuleContext;
+
+import twitter4j.Status;
+
+declare SyndFeed
+	@role(event)
+	@expires(24h)
+end
+
+declare Status
+	@role(event)
+	@expires(24h)
+end
+
+declare Alert
+	@role(event)
+	@timestamp(ts)
+	@expires(7d)
+end
+
+declare window lastAlert
+    Alert() over window:length( 1 ) // from entry-point DEFAULT
+end
+
+query "Alert"
+	$alert : Alert()
+end
+
+function long sessionCurrentTime(RuleContext kcontext) {
+	return kcontext.getKieRuntime().getSessionClock().getCurrentTime();
+}
+
+function void log(String message) {
+	// improve logging will be handled later as slf4j doesn't cope well with drools global at the moment.
+	System.out.println(message);
+}
+
+rule "Ciao"
+no-loop
+when
+then
+	log("*** Ciao");
+end
