@@ -51,7 +51,7 @@ end
 rule "last alert is a strike, cogito utter sentence"
 no-loop
 when
-	Alert(condition matches "(?i).*strike.*") from window lastAlert
+	Alert(l(condition) contains "strike") from window lastAlert
 	$cogito : Cogito()
 then
 	modify($cogito) {
@@ -59,13 +59,35 @@ then
 	}
 end
 
-rule "last alert is Metro delay, cogito utter sentence"
+rule "last alert is tweet delay, cogito utter sentence"
 no-loop
 when
-	Alert(ref instanceof Status, condition matches "(?i).*Metro delay.*") from window lastAlert
+	Alert(ref instanceof Status, l(condition) contains "delay") from window lastAlert
 	$cogito : Cogito()
 then
 	modify($cogito) {
-		setText("Last thing I know of, is about some Metro delays.");
+		setText("Last thing I know of, is about some delays.");
+	}
+end
+
+rule "last alert is tweet service interruptions, cogito utter sentence"
+no-loop
+when
+	Alert(ref instanceof Status, l(condition) contains "service interrupt") from window lastAlert
+	$cogito : Cogito()
+then
+	modify($cogito) {
+		setText("Last thing I know of, is about some service interruptions.");
+	}
+end
+
+rule "last alert is multiple tweet hash, cogito utter sentence"
+no-loop
+when
+	Alert(ref instanceof Status[], type == AlertType.INFO, l(condition) contains "multiple") from window lastAlert
+	$cogito : Cogito()
+then
+	modify($cogito) {
+		setText("Last thing I know of, appears multiple tweets for a metro line.");
 	}
 end

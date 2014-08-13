@@ -53,7 +53,7 @@ then
 	insert(grp);
 end
 
-// Remember see 'in_reply_to_user_id' if null actually will be -1 by convention of method getLong(String str) of Maven-Central / org.twitter4j / twitter4j-core / 3.0.5 / twitter4j.internal.json.z_T4JInternalParseUtil
+// Remember see JSON 'in_reply_to_user_id' if null actually will be -1 by convention of method getLong(String str) of Maven-Central / org.twitter4j / twitter4j-core / 3.0.5 / twitter4j.internal.json.z_T4JInternalParseUtil
 rule "Multiple tweets about a metro line hash"
 no-loop
 when
@@ -66,5 +66,12 @@ when
 				 )
 	not Alert( condition == "Multiple tweets about a metro line hash "+$metroHash ) over window:time( 5m ) 				 
 then
-	log("BINGO " + $metroHash + $count + $list.toArray(new Status[]{}));
+	Status[] theTweets = new Status[$list.size()];
+	$list.toArray(theTweets); // TODO check: I've tried more concise one-liner syntax but fail KB compilation.
+	Alert<Status[]> alert = new Alert<Status[]>(sessionCurrentTime(kcontext),
+													"Multiple tweets about a metro line hash "+$metroHash,	
+													AlertType.INFO,
+													theTweets);
+	insert(alert);
+	log("Multiple tweets for " + $metroHash + " count " + $count + " list: " + $list);
 end

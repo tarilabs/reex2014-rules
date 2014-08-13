@@ -1,9 +1,13 @@
 package net.tarilabs.reex2014;
 
+import static org.junit.Assert.*;
+
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 import org.drools.core.time.SessionPseudoClock;
 import org.junit.Test;
+import org.kie.api.runtime.rule.QueryResultsRow;
 
 import twitter4j.Status;
 import twitter4j.TwitterException;
@@ -12,24 +16,158 @@ import twitter4j.json.DataObjectFactory;
 public class TweetTest extends TestSupport {
 	
 	@Test(timeout=10000)
-	public void uno() throws TwitterException {
+	public void nothing() throws TwitterException {
+		Status tweet = tweet("jut a simple twitter message");
+		SessionPseudoClock sessionClock = session.getSessionClock();
+        sessionClock.advanceTime(1, TimeUnit.SECONDS);
+        session.insert(tweet);
+        session.fireAllRules();
+        
+        assertEquals("There should be no Alert", 0, session.getQueryResults("Alert").size());
+        Cogito cogito = (Cogito) session.getQueryResults("cogitoergosum").iterator().next().get("$cogito");
+		assertEquals("Last tweet should be present", 1000, cogito.getLastTweetTs());
+		assertEquals("Cogito sentence should be Not much happened yet.", "not much happened yet.", cogito.getText().toLowerCase());
+	}
+	
+	@Test(timeout=10000)
+	public void delays() throws TwitterException {
 		Status tweet = tweet("#M1 major delays sorry for this");
 		SessionPseudoClock sessionClock = session.getSessionClock();
         sessionClock.advanceTime(1, TimeUnit.SECONDS);
         session.insert(tweet);
         session.fireAllRules();
+        
+        @SuppressWarnings("unchecked")
+		Alert<Status> alert = (Alert<Status>) session.getQueryResults("Alert").iterator().next().get("$alert");
+        assertEquals("Alert should ref the Status", tweet, alert.getRef());
+        Cogito cogito = (Cogito) session.getQueryResults("cogitoergosum").iterator().next().get("$cogito");
+        assertEquals("Last tweet should be present", 1000, cogito.getLastTweetTs());
+		assertTrue("Cogito sentence should contains word delay", cogito.getText().toLowerCase().contains("delay"));
 	}
 	
 	@Test(timeout=10000)
-	public void due() throws TwitterException {
-		Status tweet = tweet("#M1 is the red line");		
+	public void serviceInterrupt() throws TwitterException {
+		Status tweet = tweet("#M1 è interrotta sulla tratta lorem - ipsum");
 		SessionPseudoClock sessionClock = session.getSessionClock();
         sessionClock.advanceTime(1, TimeUnit.SECONDS);
         session.insert(tweet);
         session.fireAllRules();
+        
+        @SuppressWarnings("unchecked")
+		Alert<Status> alert = (Alert<Status>) session.getQueryResults("Alert").iterator().next().get("$alert");
+        assertEquals("Alert should ref the Status", tweet, alert.getRef());
+        Cogito cogito = (Cogito) session.getQueryResults("cogitoergosum").iterator().next().get("$cogito");
+		assertTrue("Cogito sentence should contains phrase service interrupt", cogito.getText().toLowerCase().contains("service interrupt"));
+	}
+	
+	@Test(timeout=10000)
+	public void multiple() throws TwitterException {
+		Status tweet1 = tweet("#M1 is the red line");		
+		SessionPseudoClock sessionClock = session.getSessionClock();
         sessionClock.advanceTime(1, TimeUnit.SECONDS);
-        session.insert(tweet("#M1 is the one for Duomo"));
+        session.insert(tweet1);
         session.fireAllRules();
+        sessionClock.advanceTime(1, TimeUnit.SECONDS);
+        Status tweet2 = tweet("#M1 is the one for Duomo");
+		session.insert(tweet2);
+        session.fireAllRules();
+        
+        Status[] tweets = new Status[]{tweet1, tweet2};
+        
+        @SuppressWarnings("unchecked")
+		Alert<Status[]> alert = (Alert<Status[]>) session.getQueryResults("Alert").iterator().next().get("$alert");
+		assertArrayEquals("Alert should ref the Statuses", tweets, alert.getRef());
+        Cogito cogito = (Cogito) session.getQueryResults("cogitoergosum").iterator().next().get("$cogito");
+		assertTrue("Cogito sentence should contains word multiple", cogito.getText().toLowerCase().contains("multiple"));
+	}
+	
+	@Test(timeout=10000)
+	public void multipleExtendedNoRepeatAlert() throws TwitterException {
+		Status tweet1 = tweet("#M1 is the red line");		
+		SessionPseudoClock sessionClock = session.getSessionClock();
+        sessionClock.advanceTime(1, TimeUnit.SECONDS);
+        session.insert(tweet1);
+        session.fireAllRules();
+        sessionClock.advanceTime(1, TimeUnit.SECONDS);
+        Status tweet2 = tweet("#M1 is the one for Duomo");
+		session.insert(tweet2);
+        session.fireAllRules();
+        
+        Status[] tweets = new Status[]{tweet1, tweet2};
+        
+        @SuppressWarnings("unchecked")
+		Alert<Status[]> alert = (Alert<Status[]>) session.getQueryResults("Alert").iterator().next().get("$alert");
+		assertEquals("Alert type should be INFO", AlertType.INFO, alert.getType());
+		assertArrayEquals("Alert should ref the Statuses", tweets, alert.getRef());
+        Cogito cogito = (Cogito) session.getQueryResults("cogitoergosum").iterator().next().get("$cogito");
+		assertTrue("Cogito sentence should contains word multiple", cogito.getText().toLowerCase().contains("multiple"));
+		
+		
+		
+		sessionClock.advanceTime(1, TimeUnit.MINUTES);
+		session.insert(tweet("#M1 is the one for Duomo, really"));
+        session.fireAllRules();
+        
+        assertEquals("There should be still just 1 Alert", 1, session.getQueryResults("Alert").size());
+        @SuppressWarnings("unchecked")
+		Alert<Status[]> alertExtractedAgain = (Alert<Status[]>) session.getQueryResults("Alert").iterator().next().get("$alert");
+        assertEquals("Alert is still the same", alert, alertExtractedAgain);
+		assertArrayEquals("Alert should ref the Statuses", tweets, alertExtractedAgain.getRef());
+	}
+	
+	@Test(timeout=10000)
+	public void multipleExtendedRepeatAlertInNewWindow() throws TwitterException {
+		Status tweet1 = tweet("#M1 is the red line");		
+		SessionPseudoClock sessionClock = session.getSessionClock();
+        sessionClock.advanceTime(1, TimeUnit.SECONDS);
+        session.insert(tweet1);
+        session.fireAllRules();
+        sessionClock.advanceTime(1, TimeUnit.SECONDS);
+        Status tweet2 = tweet("#M1 is the one for Duomo");
+		session.insert(tweet2);
+        session.fireAllRules();
+        
+        Status[] tweets = new Status[]{tweet1, tweet2};
+        
+        @SuppressWarnings("unchecked")
+		Alert<Status[]> alert = (Alert<Status[]>) session.getQueryResults("Alert").iterator().next().get("$alert");
+		assertEquals("Alert type should be INFO", AlertType.INFO, alert.getType());
+		assertArrayEquals("Alert should ref the Statuses", tweets, alert.getRef());
+        Cogito cogito = (Cogito) session.getQueryResults("cogitoergosum").iterator().next().get("$cogito");
+		assertTrue("Cogito sentence should contains word multiple", cogito.getText().toLowerCase().contains("multiple"));
+		
+		
+		
+		sessionClock.advanceTime(6, TimeUnit.MINUTES);
+		Status tweet3 = tweet("#M1 is the one for Duomo, really");
+		session.insert(tweet3);
+        session.fireAllRules();
+        
+        assertEquals("There should be still just 1 Alert", 1, session.getQueryResults("Alert").size());
+        @SuppressWarnings("unchecked")
+		Alert<Status[]> alertExtractedAgain = (Alert<Status[]>) session.getQueryResults("Alert").iterator().next().get("$alert");
+        assertEquals("Alert is still the same", alert, alertExtractedAgain);
+		assertArrayEquals("Alert should ref the Statuses", tweets, alertExtractedAgain.getRef());
+		
+		
+		
+		sessionClock.advanceTime(1, TimeUnit.MINUTES);
+		Status tweet4 = tweet("#M1 is the one for Duomo, really, for real.");
+		session.insert(tweet4);
+        session.fireAllRules();
+        
+        Status[] tweets2 = new Status[]{tweet3, tweet4};
+        
+        assertEquals("There should be 2 Alert", 2, session.getQueryResults("Alert").size());
+        Iterator<QueryResultsRow> it = session.getQueryResults("Alert").iterator();
+        @SuppressWarnings({ "unused", "unchecked" })
+		Alert<Status[]> alert1 = (Alert<Status[]>) it.next().get("$alert");
+		@SuppressWarnings("unchecked")
+		Alert<Status[]> alert2 = (Alert<Status[]>) it.next().get("$alert");
+		assertEquals("Alert2 type should be INFO", AlertType.INFO, alert2.getType());
+		assertArrayEquals("Alert2 should ref the Statuses", tweets2, alert2.getRef());
+        Cogito cogito2 = (Cogito) session.getQueryResults("cogitoergosum").iterator().next().get("$cogito");
+		assertTrue("Cogito sentence should contains word multiple", cogito2.getText().toLowerCase().contains("multiple"));
 	}
 	
 	/**
