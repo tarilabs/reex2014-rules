@@ -4,7 +4,6 @@ import org.kie.api.definition.type.PropertyReactive;
 
 /**
  * The role of this class is being a reference for the main sentence uttered by the system
- * @author mmortari
  *
  */
 @PropertyReactive
