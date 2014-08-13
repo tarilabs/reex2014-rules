@@ -8,8 +8,8 @@ rule "Tweet delay"
 no-loop
 when
 	$tweet : Status( text str[startsWith] "#M",
-				     text matches "(?i)[\\s\\S]*rallent[\\s\\S]*"
-				     || text matches "(?i)[\\s\\S]*delay[\\s\\S]*"
+				     l(text) contains "rallent"
+				     || l(text) contains "delay"
 				     )
 then
 	Alert<Status> alert = new Alert<Status>(sessionCurrentTime(kcontext),
@@ -24,10 +24,10 @@ rule "Tweet service interruptions"
 no-loop
 when
 	$tweet : Status( text str[startsWith] "#M",
-				     text matches "(?i)[\\s\\S]*interrot[\\s\\S]*"
-				     || text matches "(?i)[\\s\\S]*interrupt[\\s\\S]*"
-				     || text matches "(?i)[\\s\\S]*sospesa[\\s\\S]*"
-				     || text matches "(?i)[\\s\\S]*suspended[\\s\\S]*"
+				     l(text) contains "interrot"
+				     || l(text) contains "interrupt"
+				     || l(text) contains "sospesa"
+				     || l(text) contains "suspended"
 				     )
 then
 	Alert<Status> alert = new Alert<Status>(sessionCurrentTime(kcontext),
@@ -36,4 +36,35 @@ then
 													$tweet);
 	insert(alert);
 	log("ALERT raised: " + alert);
+end
+
+declare GroupByString
+	groupId : String
+	groups : String[]
+end
+
+rule "init Metro hash of my interest"
+no-loop
+when
+then
+	GroupByString grp = new GroupByString();
+	grp.setGroupId("metroHash");
+	grp.setGroups(new String[]{"#M1", "#M2"});
+	insert(grp);
+end
+
+// Remember see 'in_reply_to_user_id' if null actually will be -1 by convention of method getLong(String str) of Maven-Central / org.twitter4j / twitter4j-core / 3.0.5 / twitter4j.internal.json.z_T4JInternalParseUtil
+rule "Multiple tweets about a metro line hash"
+no-loop
+when
+	$group : GroupByString( groupId == "metroHash")
+	$metroHash : String() from $group.groups
+	accumulate ( $tweet : Status( text contains $metroHash, inReplyToUserId == -1 ) over window:time( 5m ) ;
+				 $list : collectList( $tweet ),
+				 $count : count( $tweet );
+				 $count >= 2
+				 )
+	not Alert( condition == "Multiple tweets about a metro line hash "+$metroHash ) over window:time( 5m ) 				 
+then
+	log("BINGO " + $metroHash + $count + $list.toArray(new Status[]{}));
 end

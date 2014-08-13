@@ -20,6 +20,18 @@ public class TweetTest extends TestSupport {
         session.fireAllRules();
 	}
 	
+	@Test(timeout=10000)
+	public void due() throws TwitterException {
+		Status tweet = tweet("#M1 is the red line");		
+		SessionPseudoClock sessionClock = session.getSessionClock();
+        sessionClock.advanceTime(1, TimeUnit.SECONDS);
+        session.insert(tweet);
+        session.fireAllRules();
+        sessionClock.advanceTime(1, TimeUnit.SECONDS);
+        session.insert(tweet("#M1 is the one for Duomo"));
+        session.fireAllRules();
+	}
+	
 	/**
 	 * Make a dummy Status twitter, with the supplied text. Please note this is only maintained for the text field, other attributes may be not maintained (eg.: hashtag, users, etc.)
 	 * 

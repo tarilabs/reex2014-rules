@@ -48,6 +48,14 @@ public class Alert<T> {
 	public T getRef() {
 		return ref;
 	}
+	
+	/**
+	 * Why this? See {@link https://java.net/jira/browse/JSP_SPEC_PUBLIC-113}
+	 * @return
+	 */
+	public String getTSimpleClassName() {
+		return ref.getClass().getSimpleName();
+	}
 
 	@Override
 	public String toString() {

@@ -41,9 +41,17 @@ function void log(String message) {
 	System.out.println(message);
 }
 
+/**
+ * Syntactic sugar - without using custom Evaluators. Instead of using regexp for req 'find a keyword in text, case-unsensitive', I will leverage the MVEL 'contains' operator: but this will require convention on lowercase, I guess.
+ * This will not degrade performance badly, however rules shall be much more legible ...and easy for screenshots =)
+*/
+function String l(String text) {
+	return text.toLowerCase();
+}
+
 rule "Ciao"
 no-loop
 when
 then
-	log("*** Ciao");
+	log("Ciao");
 end

@@ -5,15 +5,15 @@
   <groupId>net.tarilabs</groupId>
   <artifactId>reex2014-rules</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <!-- the packaging should be 'kjar' but such setting has given issues see https://issues.jboss.org/browse/DROOLS-495 -->
-  <packaging>jar</packaging>
+  <!-- As JIRA is resolved, I will move to 'kjar' again, see https://issues.jboss.org/browse/DROOLS-495 -->
+  <packaging>kjar</packaging>
 
   <name>reex2014-rules</name>
   <url>http://maven.apache.org</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <drools-version>6.1.0.CR2</drools-version>
+    <drools-version>6.1.0.Final</drools-version>
   </properties>
 
   <dependencyManagement>

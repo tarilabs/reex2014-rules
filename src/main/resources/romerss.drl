@@ -10,14 +10,14 @@ rule "RSS Strike warning alert"
 no-loop
 when
 	$feed : SyndFeed()
-	$entry : SyndEntry(description.value matches "(?i)[\\s\\S]*sciopero[\\s\\S]*"
-					   || description.value matches "(?i)[\\s\\S]*strike[\\s\\S]*"
+	$entry : SyndEntry( l(description.value) contains "sciopero"
+					    || l(description.value) contains "strike"
 					   ) from $feed.entries
 then
-	Alert<SyndFeed> alert = new Alert<SyndFeed>(sessionCurrentTime(kcontext),
+	Alert<SyndEntry> alert = new Alert<SyndEntry>(sessionCurrentTime(kcontext),
 													"Strike warning alert",	
 													AlertType.WARNING,
-													$feed);
+													$entry);
 	insert(alert);
 	log("ALERT raised: " + alert);
 end	
