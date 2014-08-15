@@ -19,7 +19,7 @@ then
 													AlertType.WARNING,
 													$entry);
 	insert(alert);
-	log("ALERT raised: " + alert);
+	LOG.info("ALERT raised: " + alert);
 end	
 
 

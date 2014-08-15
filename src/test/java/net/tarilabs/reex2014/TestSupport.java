@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TestSupport {
 	final static Logger LOG = LoggerFactory.getLogger(TestSupport.class);
+	final static Logger RE_LOG = LoggerFactory.getLogger("ruleengine");
 	
 	KieSession session;
 	
@@ -41,5 +42,8 @@ public class TestSupport {
         KieSessionConfiguration config = kieServices.newKieSessionConfiguration();
 		config.setOption( ClockTypeOption.get("pseudo") );
         session = kieBase.newKieSession(config, null);
+        
+        LOG.info("Pupulating globals");
+        session.setGlobal("LOG", RE_LOG);
 	}
 }

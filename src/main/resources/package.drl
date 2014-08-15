@@ -6,6 +6,10 @@ import com.sun.syndication.feed.synd.SyndFeed;
 
 import org.kie.api.runtime.rule.RuleContext;
 
+import org.slf4j.Logger;
+
+global Logger LOG;
+
 import twitter4j.Status;
 
 declare SyndFeed
@@ -36,11 +40,6 @@ function long sessionCurrentTime(RuleContext kcontext) {
 	return kcontext.getKieRuntime().getSessionClock().getCurrentTime();
 }
 
-function void log(String message) {
-	// improve logging will be handled later as slf4j doesn't cope well with drools global at the moment.
-	System.out.println(message);
-}
-
 /**
  * Syntactic sugar - without using custom Evaluators. Instead of using regexp for req 'find a keyword in text, case-unsensitive', I will leverage the MVEL 'contains' operator: but this will require convention on lowercase, I guess.
  * This will not degrade performance badly, however rules shall be much more legible ...and easy for screenshots =)
@@ -53,5 +52,5 @@ rule "Ciao"
 no-loop
 when
 then
-	log("Ciao");
+	LOG.info("Ciao");
 end
